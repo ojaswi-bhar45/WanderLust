@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const initData = require("./data.js");
 const Listing = require("../models/listing.js");
+const User = require("../models/user.js");
 
-const MONGO_URL = "mongodb+srv://wanderUser:test12345@cluster0.up1pv.mongodb.net/wanderlust?appName=Cluster0";
+const MONGO_URL = "mongodb://127.0.0.1:27017/Wanderlust";
 
 main()
   .then(() => {
@@ -18,9 +19,15 @@ async function main() {
 
 const initDB = async () => {
   await Listing.deleteMany({});
+  await User.deleteMany({});
+
+  const newUser = new User({ email: "demo@gmail.com", username: "demo" });
+  const registeredUser = await User.register(newUser, "demo1234");
+  console.log("Default user created:", registeredUser.username);
+
   initData.data = initData.data.map((obj) => ({
     ...obj,
-    owner: "683caa1b9da3ced31c9d5358",
+    owner: registeredUser._id,
   }));
   await Listing.insertMany(initData.data);
   console.log("Database initialized with sample data");
