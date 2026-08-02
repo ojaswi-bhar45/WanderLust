@@ -1,4 +1,8 @@
 mapboxgl.accessToken = mapToken;
+const escapeHtml = (str) =>
+  String(str).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
 const map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/mapbox/streets-v12",
@@ -11,7 +15,7 @@ const marker = new mapboxgl.Marker({ color: "red" })
   .setPopup(
     new mapboxgl.Popup({ offset: 25 }).setHTML(
       `<div class="map-click">
-      <h4><b>${listing.title}</b></h4> 
+      <h4><b>${escapeHtml(listing.title)}</b></h4> 
       <p>Exact loaction will be provided after booking.</p>
       </div>`
     )

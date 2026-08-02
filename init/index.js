@@ -1,9 +1,12 @@
+require("dotenv").config();
+require("dns").setServers(["8.8.8.8", "1.1.1.1"]);
 const mongoose = require("mongoose");
 const initData = require("./data.js");
 const Listing = require("../models/listing.js");
 const User = require("../models/user.js");
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/Wanderlust";
+const MONGO_URL =
+  process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
 main()
   .then(() => {
@@ -11,6 +14,7 @@ main()
   })
   .catch((err) => {
     console.error("Error connecting to MongoDB", err);
+    process.exit(1);
   });
 
 async function main() {
@@ -33,4 +37,11 @@ const initDB = async () => {
   console.log("Database initialized with sample data");
 };
 
-initDB();
+initDB()
+  .then(() => {
+    mongoose.disconnect();
+  })
+  .catch((err) => {
+    console.error("Failed to initialize database", err);
+    process.exit(1);
+  });

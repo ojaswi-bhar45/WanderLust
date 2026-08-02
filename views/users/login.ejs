@@ -4,6 +4,11 @@
   <div class="auth-card">
     <h1 class="auth-title">Login</h1>
     <form action="/login" method="POST" class="needs-validation" novalidate>
+      <input
+        type="hidden"
+        name="redirectUrl"
+        value="<%= redirectUrl || '' %>"
+      />
       <div class="mb-3">
         <label for="username" class="form-label">Username</label>
         <input

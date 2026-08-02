@@ -13,9 +13,7 @@ module.exports.isLoggedIn = (req, res, next) => {
 };
 
 module.exports.saveRedirectUrl = (req, res, next) => {
-  if (req.session.redirectUrl) {
-    res.locals.redirectUrl = req.session.redirectUrl;
-  }
+  res.locals.redirectUrl = req.session.redirectUrl || "";
   next();
 };
 
@@ -23,7 +21,9 @@ module.exports.isOwner = async (req, res, next) => {
   let { id } = req.params;
   let listing = await Listing.findById(id);
   if (
+    !listing ||
     !res.locals.currUser ||
+    !listing.owner ||
     !listing.owner._id.equals(res.locals.currUser._id)
   ) {
     req.flash("error", "You do not have permission to edit this listing");
@@ -33,6 +33,9 @@ module.exports.isOwner = async (req, res, next) => {
 };
 
 module.exports.validateListing = (req, res, next) => {
+  if (req.body.listing && typeof req.body.listing.category === "string") {
+    req.body.listing.category = [req.body.listing.category];
+  }
   const { error } = listingSchema.validate(req.body);
   if (error) {
     const msg = error.details.map((el) => el.message).join(",");
@@ -46,7 +49,7 @@ module.exports.validateReview = (req, res, next) => {
   const { error } = reviewSchema.validate(req.body);
   if (error) {
     const msg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(msg);
+    throw new ExpressError(400, msg);
   } else {
     next();
   }
@@ -55,7 +58,7 @@ module.exports.validateReview = (req, res, next) => {
 module.exports.isReviewAuthor = async (req, res, next) => {
   let { id, reviewId } = req.params;
   let review = await Review.findById(reviewId);
-  if (!review.author.equals(req.user._id)) {
+  if (!review || !review.author || !review.author.equals(req.user._id)) {
     req.flash("error", "You are not the author of this review!");
     return res.redirect(`/listings/${id}`);
   }

@@ -17,7 +17,7 @@
     />
     <div class="card-body">
       <p class="card-text listing-owner">
-        <i class="fas fa-user-tie me-2"></i>Owned by: <i><%= listing.owner.username %></i>
+        <i class="fas fa-user-tie me-2"></i>Owned by: <i><%= listing.owner ? listing.owner.username : "Unknown" %></i>
       </p>
       <p class="card-text listing-description"><%= listing.description %></p>
       <hr class="my-3">
@@ -47,7 +47,7 @@
         <button class="btn btn-success reserve-btn">Reserve</button>
       </form>
 
-      <% if(currUser && listing.owner._id.equals(currUser._id)) { %>
+      <% if(currUser && listing.owner && listing.owner._id.equals(currUser._id)) { %>
         <a
           href="/listings/<%= listing._id %>/edit"
           class="btn btn-dark edit-btn"

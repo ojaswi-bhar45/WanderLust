@@ -39,8 +39,8 @@ router
 //Edit Route
 router.get(
   "/:id/edit",
-  isOwner, // Ensure the user is the owner of the listing
-  isLoggedIn, // Ensure the user is logged in before editing
+  isLoggedIn,
+  isOwner,
   wrapAsync(listingController.renderEditForm)
 );
 

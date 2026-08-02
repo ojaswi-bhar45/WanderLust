@@ -34,14 +34,23 @@ module.exports.createListing = async (req, res, next) => {
     })
     .send();
 
-  let url = req.file.path;
-  let filename = req.file.filename;
+  let url =
+    "https://images.unsplash.com/photo-1470165301023-58dab8118cc9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60";
+  let filename = "default_listing_image";
+  if (req.file) {
+    url = req.file.path;
+    filename = req.file.filename;
+  }
+
   const newListing = new Listing(req.body.listing);
-  newListing.owner = req.user._id; // Set the owner to the currently logged-in user
-  newListing.image = { url, filename }; // Set the image URL and filename
-  newListing.geometry = response.body.features[0].geometry;
-  let savedListing = await newListing.save();
-  console.log(savedListing);
+  newListing.owner = req.user._id;
+  newListing.image = { url, filename };
+  if (response.body.features && response.body.features.length > 0) {
+    newListing.geometry = response.body.features[0].geometry;
+  } else {
+    newListing.geometry = { type: "Point", coordinates: [0, 0] };
+  }
+  await newListing.save();
   req.flash("success", "New listing created successfully!");
   res.redirect("/listings");
 };
@@ -54,8 +63,15 @@ module.exports.renderEditForm = async (req, res) => {
     return res.redirect("/listings");
   }
 
-  originalImageUrl = listing.image.url; // Store the original image URL
-  originalImageUrl = originalImageUrl.replace("/upload", "/upload/h_200"); // Adjust the URL for the original image size
+  if (listing.category && Array.isArray(listing.category)) {
+    listing.category = listing.category.map((cat) => cat.replace(/ /g, "-"));
+  }
+
+  let originalImageUrl =
+    listing.image && listing.image.url ? listing.image.url : listing.image;
+  if (originalImageUrl) {
+    originalImageUrl = originalImageUrl.replace("/upload", "/upload/h_200");
+  }
 
   res.render("listings/edit", { listing, originalImageUrl });
 };
@@ -77,7 +93,8 @@ module.exports.updateListing = async (req, res, next) => {
 
 module.exports.filter = async (req, res, next) => {
   let { id } = req.params;
-  let allListings = await Listing.find({ category: { $all: [id] } });
+  let alternatives = [id, id.replace(/-/g, " ")];
+  let allListings = await Listing.find({ category: { $in: alternatives } });
   if (allListings.length != 0) {
     res.locals.success = `Listings Filtered by ${id}!`;
     res.render("listings/index.ejs", { allListings });

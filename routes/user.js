@@ -13,7 +13,7 @@ router
 
 router
   .route("/login")
-  .get(usersController.renderLoginForm) // Use the renderLoginForm controller function
+  .get(saveRedirectUrl, usersController.renderLoginForm) // Use the renderLoginForm controller function
   .post(
     saveRedirectUrl, // Save the redirect URL before authentication
     passport.authenticate("local", {

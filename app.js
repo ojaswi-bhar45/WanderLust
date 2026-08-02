@@ -1,5 +1,7 @@
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
+  // Public DNS fallback: local ISP resolver intermittently refuses SRV queries
+  require("dns").setServers(["8.8.8.8", "1.1.1.1"]);
 }
 const express = require("express");
 const app = express();
@@ -21,21 +23,35 @@ const userRouter = require("./routes/user.js");
 
 // const MONGO_URL = "mongodb://127.0.0.1:27017/Wanderlust";
 
-const dbUrl = process.env.ATLASDB_URL;
+const dbUrl =
+  process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
 app.use(methodOverride("_method"));
 
-main()
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.error("Error connecting to MongoDB", err);
-  });
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled promise rejection:", err && err.message);
+});
 
 async function main() {
-  await mongoose.connect(dbUrl);
+  await mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 15000 });
 }
+
+async function connectWithRetry(attempt = 1) {
+  try {
+    await main();
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.error(
+      `Error connecting to MongoDB (attempt ${attempt}/5):`,
+      err.message
+    );
+    if (attempt < 5) {
+      setTimeout(() => connectWithRetry(attempt + 1), 5000);
+    }
+  }
+}
+
+connectWithRetry();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -66,8 +82,7 @@ const sessionOptions = {
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 7 days
-    maxAge: 1000 * 60 * 60 * 24 * 7, //1000 * 60 * 60 * 24   --->   1 day
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },
 };
 
@@ -112,5 +127,5 @@ app.use((err, req, res, next) => {
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log("Server is running on port 8080", 8080);
+  console.log("Server is running on port", port);
 });
