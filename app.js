@@ -36,18 +36,13 @@ async function main() {
   await mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 15000 });
 }
 
-async function connectWithRetry(attempt = 1) {
+async function connectWithRetry() {
   try {
     await main();
     console.log("Connected to MongoDB");
   } catch (err) {
-    console.error(
-      `Error connecting to MongoDB (attempt ${attempt}/5):`,
-      err.message
-    );
-    if (attempt < 5) {
-      setTimeout(() => connectWithRetry(attempt + 1), 5000);
-    }
+    console.error("Error connecting to MongoDB:", err.message);
+    setTimeout(connectWithRetry, 30000);
   }
 }
 
